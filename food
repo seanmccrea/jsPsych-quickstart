@@ -1,0 +1,154 @@
+<!DOCTYPE HTML>
+
+<html>
+<head>
+<title>Experiment</title>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script src="jspsych-4.3/jspsych.js"></script> 
+				<script src="jspsych-4.3/plugins/jspsych-text.js"></script>
+				<script src="jspsych-4.3/plugins/jspsych-single-stim.js"></script>
+				<link href="jspsych-4.3/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+</head>
+<body></body>
+<script>
+
+    /* welcome message block */
+    var welcome_block = {
+     type: "text",
+    text: "Welcome to the Food Quest Game!"+ 
+		"<p>In this game, imagine you are on a long journey. "+
+     "Your goal is to win the game by completing the journey. </p>"+ 
+				 "<p>Traveling will cost you energy. You can keep your energy "+
+				 "level up by eating. However, eating too much unhealthy food "+
+				 "will make you obese.</p>"+
+	     "<strong><p>If your energy reaches 0, you will die and lose the game!</strong></p>"+
+	 "<strong><p>If your obesity hits 100, you will also die and lose the game!</strong></p>"+
+		 "<p>Your energy level and obesity level will be displayed on the screen</p>"+
+		 "<p>Press any key to continue.</p>",
+   };
+
+    /* define instructions block */
+  var instructions1_block = {
+    type: "text",
+    text:  "<p>Occassionally, you will find an item on your journey. It will appear " +
+       "in the center of the screen. If you want to <strong>eat</strong> the item, " +
+      "press the <strong>letter E</strong> on the keyboard as fast as you can.</p>" +
+    "<p>If you decide <strong>not to eat</strong> the item, do not press any key. " +
+        "You have 2.5 seconds to make your choice before you continue on your journey.</p>" +
+        "<p>There are two types of food you can eat: </p>"+
+			"<div class='left center-content'><img src='img/carrot.jpg'></img>" +
+    "<p class='small'><strong>Carrots: Low energy, no risk of obesity</strong></p></div>" +
+        "<div class='right center-content'><img src='img/donut.jpg'></img>" +
+         "<p class='small'><strong>Donuts: High energy, high risk of obesity</strong></p></div>" +
+         "<p>Press any key to begin.</p>",
+
+    };
+// more instructions
+	 var instructions2_block = {
+     type: "text",
+     text:  "<p>There will also be times when you do not find anything to eat, "+
+		    "signified by a rock. In this case, you will lose some energy regardless "+
+					"of your response."+
+					"<div class='left center-content'><img src='img/rock.jpg'></img>" +
+         "<p class='small'><strong>Rocks: No energy, no risk of obesity</strong></p></div>" +
+       "<p>Press any key to begin the game</p>",
+      timing_post_trial: 2000
+    };
+    
+  /* define debrief block */
+
+
+    var debrief_block = {
+      type: "text",
+      text: function() {
+        if (energy<=0 || obesity>=100) {return "You died!";} else {
+				return "You survived!<p>Your final energy was "+energy+" and your final obesity was "+obesity+"</p>"};
+      }
+    };
+		
+// number of trials
+   var max_trials = 15;
+ 
+
+// define stimuli
+   var items = ['img/carrot.jpg','img/rock.jpg','img/donut.jpg','img/carrot.jpg','img/rock.jpg','img/donut.jpg','img/carrot.jpg','img/rock.jpg','img/donut.jpg','img/carrot.jpg','img/rock.jpg','img/donut.jpg','img/carrot.jpg','img/rock.jpg','img/donut.jpg',];
+  
+
+	
+	// 	define timeline of the experiment
+var timeline = [];
+  var i = 0;
+  var obesity = 0;
+  var energy = 50;
+	var done = false;		
+ timeline.push(welcome_block);
+ timeline.push(instructions1_block);
+ timeline.push(instructions2_block);
+	//define trials  
+	var shuffleditems = jsPsych.randomization.shuffle(items);
+	for (i=0; i < max_trials; i++){ 
+	     
+			 
+			 
+			 var trial = {
+            type: 'single-stim',
+            stimuli: shuffleditems[i],
+        		choices: ['E'], 
+            timing_response: 2500,
+            timing_post_trial: 0,
+		   };
+       
+	 			 
+			 var score = {
+        type: "text",
+        text:  function(){
+				var lasttrialdata = jsPsych.data.getLastTrialData();
+				energy-=5;
+				if (lasttrialdata.key_press==69 && lasttrialdata.stimulus == 'img/donut.jpg') {energy+=20; obesity+=10;} 
+				else if (lasttrialdata.key_press==69 && lasttrialdata.stimulus == 'img/carrot.jpg') {energy+=5;};
+				return "<p>Your energy is " + energy +" and your obesity score is " +obesity+"</p>" +
+		    "<p>Press the spacebar to continue the game</p>";},
+        cont_key: [' '],
+				timing_post_trial: 2000
+    };
+    
+
+	  var linearchunk = {
+		chunk_type: 'linear',
+		timeline: [trial,score]
+		}
+		
+		//only run the next trial if not dead
+		var ifchunk = {
+		chunk_type: 'if',
+		timeline: [linearchunk],
+		conditional_function: function(){
+		    if (energy <=0 || obesity >=100) {return false;} else {return true;}
+				}
+		}
+	
+
+		timeline.push(ifchunk);	 
+	
+  }; //end of for loop
+  timeline.push(debrief_block);
+
+
+		
+  // var post_trial_gap = function() {
+  //    return Math.floor( Math.random() * 2500 ) + 750;
+ //   }
+
+
+
+    /* start the experiment */
+    jsPsych.init({
+      experiment_structure: timeline, 
+      on_finish: function() {
+        jsPsych.data.displayData();
+      }
+    }); 
+ </script>
+
+</html>
